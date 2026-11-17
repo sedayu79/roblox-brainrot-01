@@ -1,34 +1,33 @@
--- Brainrot Bazaar: client boot — builds the HUD, wires the lock and rebirth
--- buttons to the server, and listens for state updates and toasts.
+-- Brainrot Bazaar: client boot. Builds the HUD and the world effects,
+-- then routes every server message to the right piece of UI.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = Players.LocalPlayer
 
 local Hud = require(script.Parent:WaitForChild("Hud"))
 local WorldClient = require(script.Parent:WaitForChild("WorldClient"))
 
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-local StateUpdate = Remotes:WaitForChild("StateUpdate")
-local Notify = Remotes:WaitForChild("Notify")
+Hud.build()
+Hud.bindRemotes()
+Hud.startClock()
+WorldClient.build()
 
-Hud.build(player)
-WorldClient.start()
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local stateUpdate = remotes:WaitForChild("StateUpdate")
+local notify = remotes:WaitForChild("Notify")
 
-StateUpdate.OnClientEvent:Connect(function(state)
-	Hud.update(state)
-	WorldClient.update(state)
+stateUpdate.OnClientEvent:Connect(function(snapshot)
+	Hud.update(snapshot)
 end)
 
-Notify.OnClientEvent:Connect(function(text, kind)
-	Hud.toast(text, kind)
+notify.OnClientEvent:Connect(function(kind, text)
+	if kind == "toast" then
+		Hud.toast(text)
+	elseif kind == "tsunamiWarning" then
+		WorldClient.showTsunamiWarning()
+		Hud.toast(text)
+	elseif kind == "tsunamiEnd" then
+		WorldClient.hideTsunami()
+	end
 end)
 
-Hud.onLock(function()
-	Remotes:WaitForChild("LockBase"):FireServer()
-end)
-
-Hud.onRebirth(function()
-	Remotes:WaitForChild("Rebirth"):FireServer()
-end)
+print("Brainrot Bazaar client siap.")

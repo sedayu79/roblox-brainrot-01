@@ -1,126 +1,85 @@
--- Brainrot Bazaar: the cast. Twelve original absurd characters on a ladder of
--- six rarities, each with a price, an income per second, a look and an accessory.
--- Nothing here is copied from another brainrot game: the names are our own.
+-- Brainrot Bazaar: the cast, the rarity ladder and the mutations.
+-- Every character is an original Indonesian joke: a flying catfish,
+-- a samurai plate of fried rice, a giant iced tea, and friends.
 
 local Catalog = {}
 
-Catalog.RARITIES = {
-	{ name = "Common", color = Color3.fromRGB(160, 200, 160), weight = 40 },
-	{ name = "Rare", color = Color3.fromRGB(80, 160, 255), weight = 25 },
-	{ name = "Epic", color = Color3.fromRGB(180, 90, 255), weight = 15 },
-	{ name = "Legendary", color = Color3.fromRGB(255, 200, 40), weight = 10 },
-	{ name = "Mythic", color = Color3.fromRGB(255, 80, 120), weight = 6 },
-	{ name = "Brainrot God", color = Color3.fromRGB(255, 80, 200), weight = 4 },
+Catalog.Rarities = { "Common", "Rare", "Epic", "Legendary", "Mythic", "Brainrot God" }
+
+Catalog.RarityColors = {
+	Common = Color3.fromRGB(200, 200, 200),
+	Rare = Color3.fromRGB(80, 170, 255),
+	Epic = Color3.fromRGB(170, 90, 255),
+	Legendary = Color3.fromRGB(255, 180, 40),
+	Mythic = Color3.fromRGB(255, 70, 90),
+	["Brainrot God"] = Color3.fromRGB(255, 215, 0),
 }
 
--- accessory: the extra parts World.buildBrainrotModel bolts onto the body.
-Catalog.BRAINROTS = {
-	{ id = "lele_terbang", name = "Lele Terbang", rarity = 1, cost = 50, rate = 5,
-		color = Color3.fromRGB(120, 160, 200), size = Vector3.new(3, 2.4, 3), shape = "Block", accessory = "wings",
-		blurb = "A catfish that learned to fly and never looked back." },
-	{ id = "nasi_samurai", name = "Nasi Goreng Samurai", rarity = 1, cost = 100, rate = 8,
-		color = Color3.fromRGB(240, 160, 60), size = Vector3.new(3, 3, 3), shape = "Block", accessory = "katana",
-		blurb = "Fried rice with a katana. Honor is served hot." },
-	{ id = "es_teh_raksasa", name = "Es Teh Raksasa", rarity = 2, cost = 300, rate = 18,
-		color = Color3.fromRGB(200, 140, 40), size = Vector3.new(3, 4, 3), shape = "Block", accessory = "straw",
-		blurb = "A giant iced tea. Sweet, cold, and judging you." },
-	{ id = "ayam_dj", name = "Ayam Geprek DJ", rarity = 2, cost = 500, rate = 28,
-		color = Color3.fromRGB(220, 70, 60), size = Vector3.new(3, 3, 3), shape = "Ball", accessory = "headphones",
-		blurb = "A smashed fried chicken that drops beats, not crumbs." },
-	{ id = "kapten_krupuk", name = "Kapten Krupuk", rarity = 3, cost = 1200, rate = 55,
-		color = Color3.fromRGB(245, 225, 170), size = Vector3.new(3.4, 3, 3.4), shape = "Block", accessory = "captainHat",
-		blurb = "Captain of the cracker fleet. Crunchy and in charge." },
-	{ id = "bakso_blaster", name = "Bakso Blaster", rarity = 3, cost = 2000, rate = 85,
-		color = Color3.fromRGB(150, 100, 60), size = Vector3.new(3.4, 3.4, 3.4), shape = "Ball", accessory = "blaster",
-		blurb = "A meatball with a blaster. Soup's on, forever." },
-	{ id = "raja_rendang", name = "Raja Rendang", rarity = 4, cost = 5000, rate = 170,
-		color = Color3.fromRGB(140, 40, 30), size = Vector3.new(3.6, 3.6, 3.6), shape = "Block", accessory = "crown",
-		blurb = "The slow-cooked king. Four hours on the throne." },
-	{ id = "hantu_indomie", name = "Hantu Indomie", rarity = 4, cost = 8000, rate = 240,
-		color = Color3.fromRGB(250, 230, 140), size = Vector3.new(3.2, 4, 3.2), shape = "Block", accessory = "ghost",
-		blurb = "An instant-noodle ghost. Gone in three minutes." },
-	{ id = "dewa_durian", name = "Dewa Durian", rarity = 5, cost = 20000, rate = 480,
-		color = Color3.fromRGB(120, 180, 60), size = Vector3.new(4, 4, 4), shape = "Ball", accessory = "horns",
-		blurb = "The durian god. Smells like victory. And durian." },
-	{ id = "naga_sate", name = "Naga Sate", rarity = 5, cost = 35000, rate = 700,
-		color = Color3.fromRGB(220, 80, 50), size = Vector3.new(4.4, 3.6, 4.4), shape = "Block", accessory = "dragon",
-		blurb = "A satay dragon. Ten skewers of pure fire." },
-	{ id = "sultan_lele", name = "Sultan Lele Terbang", rarity = 6, cost = 100000, rate = 1500,
-		color = Color3.fromRGB(255, 210, 60), size = Vector3.new(4.6, 4, 4.6), shape = "Block", accessory = "sultan",
-		blurb = "The flying catfish, crowned. All rivers bow." },
-	{ id = "ratu_es_teh", name = "Maha Ratu Es Teh", rarity = 6, cost = 200000, rate = 2400,
-		color = Color3.fromRGB(255, 150, 200), size = Vector3.new(4.4, 4.6, 4.4), shape = "Block", accessory = "queen",
-		blurb = "Supreme queen of iced tea. Sweetness is law." },
+Catalog.Characters = {
+	{ id = "lele_terbang", name = "Lele Terbang", rarity = "Common", cost = 50, income = 2, color = Color3.fromRGB(90, 120, 200), blurb = "Ikan lele yang menolak berenang. Ia terbang." },
+	{ id = "nasi_goreng_samurai", name = "Nasi Goreng Samurai", rarity = "Common", cost = 150, income = 5, color = Color3.fromRGB(220, 160, 60), blurb = "Nasi goreng bersenjatakan sumpit katana." },
+	{ id = "es_teh_raksasa", name = "Es Teh Raksasa", rarity = "Rare", cost = 400, income = 12, color = Color3.fromRGB(200, 120, 40), blurb = "Segelas es teh setinggi rumah. Manisnya kebangetan." },
+	{ id = "ayam_geprek_dj", name = "Ayam Geprek DJ", rarity = "Rare", cost = 900, income = 25, color = Color3.fromRGB(255, 90, 90), blurb = "Ayam geprek yang nge-DJ di warung jam 2 pagi." },
+	{ id = "kapten_krupuk", name = "Kapten Krupuk", rarity = "Epic", cost = 2000, income = 55, color = Color3.fromRGB(255, 220, 150), blurb = "Kapten kapal kerupuk. Renyah, tapi berwibawa." },
+	{ id = "bakso_blaster", name = "Bakso Blaster", rarity = "Epic", cost = 4500, income = 120, color = Color3.fromRGB(160, 90, 60), blurb = "Bakso yang menembakkan kuah panas ke musuh." },
+	{ id = "raja_rendang", name = "Raja Rendang", rarity = "Legendary", cost = 10000, income = 260, color = Color3.fromRGB(120, 60, 20), blurb = "Raja segala rendang. Dagingnya empuk, tahtanya abadi." },
+	{ id = "hantu_indomie", name = "Hantu Indomie", rarity = "Legendary", cost = 22000, income = 550, color = Color3.fromRGB(255, 240, 120), blurb = "Hantu mie instan yang menghantui dapur kos." },
+	{ id = "dewa_durian", name = "Dewa Durian", rarity = "Mythic", cost = 50000, income = 1200, color = Color3.fromRGB(180, 220, 60), blurb = "Dewa durian. Baunya sakral, rasanya surga." },
+	{ id = "naga_sate", name = "Naga Sate", rarity = "Mythic", cost = 120000, income = 2800, color = Color3.fromRGB(255, 120, 40), blurb = "Naga yang badannya tusukan sate. Jangan digigit." },
+	{ id = "sultan_lele_terbang", name = "Sultan Lele Terbang", rarity = "Brainrot God", cost = 300000, income = 7000, color = Color3.fromRGB(255, 215, 0), blurb = "Lele terbang yang sudah jadi sultan. Punya istana di awan." },
+	{ id = "maha_ratu_es_teh", name = "Maha Ratu Es Teh", rarity = "Brainrot God", cost = 750000, income = 18000, color = Color3.fromRGB(255, 150, 180), blurb = "Ratu segala es teh. Satu tegukan, langsung kaya." },
 }
 
--- Mutations rolled on spawn: a name, an income multiplier and a tint.
-Catalog.MUTATIONS = {
-	{ id = "none", name = "", mult = 1, tint = nil, weight = 70 },
-	{ id = "emas", name = "EMAS", mult = 2, tint = Color3.fromRGB(255, 215, 0), weight = 15 },
-	{ id = "lava", name = "LAVA", mult = 3, tint = Color3.fromRGB(255, 90, 30), weight = 10 },
-	{ id = "pelangi", name = "PELANGI", mult = 5, tint = Color3.fromRGB(200, 80, 255), weight = 5 },
+Catalog.Mutations = {
+	{ id = "biasa", name = "", mult = 1, chance = 0.70, color = Color3.fromRGB(255, 255, 255) },
+	{ id = "emas", name = "Emas", mult = 2, chance = 0.18, color = Color3.fromRGB(255, 215, 0) },
+	{ id = "lava", name = "Lava", mult = 3, chance = 0.09, color = Color3.fromRGB(255, 80, 20) },
+	{ id = "pelangi", name = "Pelangi", mult = 5, chance = 0.03, color = Color3.fromRGB(150, 220, 255) },
 }
 
 function Catalog.getById(id)
-	for _, def in ipairs(Catalog.BRAINROTS) do
-		if def.id == id then
-			return def
+	for _, char in ipairs(Catalog.Characters) do
+		if char.id == id then
+			return char
 		end
 	end
 	return nil
 end
 
-function Catalog.rarityName(index)
-	return Catalog.RARITIES[index].name
-end
-
-function Catalog.rarityColor(index)
-	return Catalog.RARITIES[index].color
-end
-
--- Cheapest brainrot of each rarity, for the HUD ladder.
-function Catalog.cheapestOfRarity(index)
-	local best = nil
-	for _, def in ipairs(Catalog.BRAINROTS) do
-		if def.rarity == index and (best == nil or def.cost < best.cost) then
-			best = def
+function Catalog.getMutationById(id)
+	for _, mutation in ipairs(Catalog.Mutations) do
+		if mutation.id == id then
+			return mutation
 		end
 	end
-	return best
+	return Catalog.Mutations[1]
 end
 
-local function rollWeighted(list, weightKey)
-	local total = 0
-	for _, entry in ipairs(list) do
-		total += entry[weightKey]
-	end
-	local roll = math.random() * total
-	for _, entry in ipairs(list) do
-		roll -= entry[weightKey]
-		if roll <= 0 then
-			return entry
-		end
-	end
-	return list[1]
-end
-
-function Catalog.rollBrainrot()
-	local rarity = rollWeighted(Catalog.RARITIES, "weight")
-	local pool = {}
-	for _, def in ipairs(Catalog.BRAINROTS) do
-		if def.rarity == table.find(Catalog.RARITIES, rarity) then
-			table.insert(pool, def)
-		end
-	end
-	return pool[math.random(1, #pool)]
+function Catalog.randomCharacter()
+	return Catalog.Characters[math.random(1, #Catalog.Characters)]
 end
 
 function Catalog.rollMutation()
-	return rollWeighted(Catalog.MUTATIONS, "weight")
+	local roll = math.random()
+	local running = 0
+	for _, mutation in ipairs(Catalog.Mutations) do
+		running += mutation.chance
+		if roll <= running then
+			return mutation
+		end
+	end
+	return Catalog.Mutations[1]
 end
 
-function Catalog.rebirthCost(rebirths)
-	return 10000 * (2 ^ rebirths)
+function Catalog.incomeOf(char, mutation)
+	return char.income * mutation.mult
+end
+
+function Catalog.displayName(char, mutation)
+	if mutation.id == "biasa" then
+		return char.name
+	end
+	return mutation.name .. " " .. char.name
 end
 
 return Catalog

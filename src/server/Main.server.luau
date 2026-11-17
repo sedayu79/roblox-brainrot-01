@@ -1,10 +1,9 @@
--- Brainrot Bazaar: boots the server — builds the bases, wires the remotes,
--- starts the conveyor, the economy tick and the threats, and keeps the
--- brainrots on their base slots gently bobbing.
+-- Brainrot Bazaar: server boot. Builds the world, claims a base for
+-- every player who joins, and starts the conveyor, the economy tick
+-- and the threats.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local GameState = require(script.Parent:WaitForChild("GameState"))
 local World = require(script.Parent:WaitForChild("World"))
@@ -12,39 +11,75 @@ local Conveyor = require(script.Parent:WaitForChild("Conveyor"))
 local Economy = require(script.Parent:WaitForChild("Economy"))
 local Threat = require(script.Parent:WaitForChild("Threat"))
 
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local notify = remotes:WaitForChild("Notify")
+local lockBaseRemote = remotes:WaitForChild("LockBase")
+local rebirthRemote = remotes:WaitForChild("Rebirth")
+local stateUpdate = remotes:WaitForChild("StateUpdate")
+
 World.buildBases()
 
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-Remotes:WaitForChild("LockBase").OnServerEvent:Connect(function(player)
-	GameState.lockBase(player)
-end)
-Remotes:WaitForChild("Rebirth").OnServerEvent:Connect(function(player)
-	GameState.rebirth(player)
+local function sendState(player)
+	local snapshot = GameState.snapshot(player)
+	if snapshot ~= nil then
+		stateUpdate:FireClient(player, snapshot)
+	end
+end
+
+local function onPlayerAdded(player)
+	GameState.addPlayer(player)
+	local base = World.claimBase(player)
+	if base == nil then
+		notify:FireClient(player, "toast", "Semua base penuh! Tunggu giliran.")
+	else
+		notify:FireClient(player, "toast", "Selamat datang di Pasar Absurd! Base " .. base.index .. " milikmu.")
+	end
+	sendState(player)
+end
+
+local function onPlayerRemoving(player)
+	local state = GameState.get(player)
+	if state ~= nil then
+		if state.carrying ~= nil then
+			Threat.dropCarried(player)
+		end
+		for _, entry in ipairs(state.owned) do
+			if entry.model ~= nil then
+				entry.model:Destroy()
+			end
+		end
+	end
+	World.releaseBase(player)
+	GameState.removePlayer(player)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+for _, player in ipairs(Players:GetPlayers()) do
+	task.spawn(onPlayerAdded, player)
+end
+
+lockBaseRemote.OnServerEvent:Connect(function(player)
+	local _, message = GameState.lockBase(player)
+	notify:FireClient(player, "toast", message)
+	sendState(player)
 end)
 
-Players.PlayerAdded:Connect(function(player)
-	GameState.newPlayer(player)
+rebirthRemote.OnServerEvent:Connect(function(player)
+	local ok, message, removed = GameState.tryRebirth(player)
+	if ok and removed ~= nil then
+		for _, entry in ipairs(removed) do
+			if entry.model ~= nil then
+				entry.model:Destroy()
+			end
+		end
+	end
+	notify:FireClient(player, "toast", message)
+	sendState(player)
 end)
-Players.PlayerRemoving:Connect(function(player)
-	GameState.removePlayer(player)
-end)
-for _, player in ipairs(Players:GetPlayers()) do
-	GameState.newPlayer(player)
-end
 
 Conveyor.start()
 Economy.start()
 Threat.start()
 
--- Brainrots parked on a base bob gently so the base looks alive.
-RunService.Heartbeat:Connect(function()
-	local t = os.clock()
-	for _, record in pairs(GameState.brainrots) do
-		if record.state == "base" and not record.moving and record.slotCF and record.model and record.model.Parent then
-			local bob = math.sin(t * 2 + (record.phase or 0)) * 0.15
-			record.model:PivotTo(record.slotCF * CFrame.new(0, bob, 0))
-		end
-	end
-end)
-
-print("Brainrot Bazaar server ready: 6 bases, conveyor live, tsunami armed.")
+print("Brainrot Bazaar server siap: conveyor, ekonomi, tsunami dan pencuri jalan.")

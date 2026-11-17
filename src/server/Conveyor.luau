@@ -1,94 +1,92 @@
--- Brainrot Bazaar: the conveyor. Brainrots roll in on the north lane, ride the
--- belt west to east, and a player who walks up can buy one with a prompt.
-
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+-- Brainrot Bazaar: the conveyor lane. Every few seconds a new
+-- brainrot rides the belt; buy it with the prompt before it rides
+-- off the end, and it walks to a free slot on your base.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Catalog = require(Shared:WaitForChild("Catalog"))
 local Config = require(Shared:WaitForChild("Config"))
+local GameState = require(script.Parent:WaitForChild("GameState"))
+local World = require(script.Parent:WaitForChild("World"))
+local Threat = require(script.Parent:WaitForChild("Threat"))
 
 local Conveyor = {}
-local folder = nil
 
-function Conveyor.countOnBelt()
-	local count = 0
-	local GameState = require(script.Parent:WaitForChild("GameState"))
-	for _, record in pairs(GameState.brainrots) do
-		if record.state == "conveyor" then
-			count += 1
-		end
-	end
-	return count
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local notify = remotes:WaitForChild("Notify")
+
+local function beltPosition(x)
+	return Vector3.new(x, 1, Config.BeltZ)
 end
 
-function Conveyor.spawnBrainrot()
-	if Conveyor.countOnBelt() >= Config.CONVEYOR_MAX then
+-- Ride the belt west to east. Returns false when the model was sold
+-- or destroyed mid-ride, so the caller knows not to despawn it.
+local function rideBelt(model)
+	local steps = math.floor(Config.BeltRideSeconds / 0.1)
+	for step = 1, steps do
+		if model.Parent == nil or model:GetAttribute("Sold") then
+			return false
+		end
+		local alpha = step / steps
+		local x = Config.BeltEnterX + (Config.BeltExitX - Config.BeltEnterX) * alpha
+		model:PivotTo(CFrame.new(beltPosition(x)))
+		task.wait(0.1)
+	end
+	return model.Parent ~= nil and not model:GetAttribute("Sold")
+end
+
+function Conveyor.spawnOne()
+	local char = Catalog.randomCharacter()
+	local mutation = Catalog.rollMutation()
+	local model = World.makeBrainrotModel(char, mutation, char.cost)
+	model.Parent = workspace
+	model:PivotTo(CFrame.new(beltPosition(Config.BeltEnterX)))
+	local body = model:FindFirstChild("Body")
+	local prompt = body and body:FindFirstChild("BuyPrompt")
+	if prompt == nil then
+		model:Destroy()
 		return
 	end
-	local GameState = require(script.Parent:WaitForChild("GameState"))
-	local World = require(script.Parent:WaitForChild("World"))
-	local def = Catalog.rollBrainrot()
-	local mutation = Catalog.rollMutation()
-	local rate = def.rate * mutation.mult
-	local cf = CFrame.new(Config.CONVEYOR_START_X, Config.CONVEYOR_Y + def.size.Y / 2, Config.CONVEYOR_Z)
-	local model = World.buildBrainrotModel(def, mutation, rate, cf)
-	model.Parent = folder
-	local id = GameState.nextId()
-	local record = {
-		id = id,
-		def = def,
-		mutation = mutation,
-		rate = rate,
-		cost = def.cost,
-		owner = nil,
-		state = "conveyor",
-		model = model,
-		slotIndex = nil,
-		bornAt = os.clock(),
-		beltX = Config.CONVEYOR_START_X,
-		phase = math.random() * math.pi * 2,
-	}
-	GameState.registerBrainrot(record)
-	World.refreshPrompt(record)
+	prompt.Triggered:Connect(function(player)
+		if model:GetAttribute("Sold") then
+			return
+		end
+		local state = GameState.get(player)
+		if state == nil then
+			return
+		end
+		if World.baseOf(player) == nil then
+			notify:FireClient(player, "toast", "Kamu belum punya base!")
+			return
+		end
+		if state.money < char.cost then
+			notify:FireClient(player, "toast", "Uang tidak cukup! " .. char.name .. " harganya $" .. tostring(char.cost) .. ".")
+			return
+		end
+		local entry = GameState.addBrainrot(player, char.id, mutation.id)
+		if entry == nil then
+			notify:FireClient(player, "toast", "Base penuh! Rebirth untuk mengosongkannya.")
+			return
+		end
+		GameState.trySpend(player, char.cost)
+		model:SetAttribute("Sold", true)
+		prompt:Destroy()
+		entry.model = model
+		Threat.placeOnBase(player, entry)
+		notify:FireClient(player, "toast", "Dibeli: " .. Catalog.displayName(char, mutation) .. " ($" .. tostring(char.income * mutation.mult) .. "/dtk)!")
+	end)
+	local reachedEnd = rideBelt(model)
+	if reachedEnd then
+		-- Nobody bought it: it rides off the end and vanishes.
+		model:Destroy()
+	end
 end
 
 function Conveyor.start()
-	folder = Instance.new("Folder")
-	folder.Name = "ConveyorBrainrots"
-	folder.Parent = Workspace
-	Conveyor.spawnBrainrot()
 	task.spawn(function()
 		while true do
-			task.wait(Config.CONVEYOR_SPAWN_INTERVAL)
-			Conveyor.spawnBrainrot()
-		end
-	end)
-	RunService.Heartbeat:Connect(function(dt)
-		local GameState = require(script.Parent:WaitForChild("GameState"))
-		local toRemove = {}
-		for id, record in pairs(GameState.brainrots) do
-			if record.state == "conveyor" and record.model and record.model.Parent then
-				record.beltX += Config.CONVEYOR_SPEED * dt
-				local bob = math.sin(os.clock() * 3 + record.phase) * 0.15
-				local cf = CFrame.new(
-					record.beltX,
-					Config.CONVEYOR_Y + record.def.size.Y / 2 + bob,
-					Config.CONVEYOR_Z
-				)
-				record.model:PivotTo(cf)
-				if record.beltX >= Config.CONVEYOR_END_X or os.clock() - record.bornAt > Config.CONVEYOR_LIFETIME then
-					table.insert(toRemove, id)
-				end
-			end
-		end
-		for _, id in ipairs(toRemove) do
-			local record = GameState.brainrots[id]
-			if record and record.model then
-				record.model:Destroy()
-			end
-			GameState.unregisterBrainrot(id)
+			task.wait(Config.SpawnInterval)
+			task.spawn(Conveyor.spawnOne)
 		end
 	end)
 end

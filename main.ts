@@ -1,3 +1,5 @@
+// Rebuilt fresh in a witnessed session (2026-11-17): same design, all twelve
+// Luau scripts re-composed from the spec after the first build ran unwitnessed.
 // Brainrot Bazaar — Curi Lele Terbang: a 3D Steal-a-Brainrot game built with Rojo.
 // Brainrots ride a conveyor into the plaza; you buy one, it earns money a second
 // on your base, and you climb a rarity ladder while a tsunami and a thief keep

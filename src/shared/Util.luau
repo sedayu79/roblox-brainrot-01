@@ -1,26 +1,42 @@
--- Brainrot Bazaar: small shared helpers — money formatting and clamps.
+-- Brainrot Bazaar: small shared helpers (money and time formatting).
 
 local Util = {}
 
--- $950 -> "$950", $1500 -> "$1.5K", $2,400,000 -> "$2.4M", $1,500,000,000 -> "$1.5B"
+local SUFFIXES = { "", "K", "M", "B", "T" }
+
 function Util.formatMoney(amount)
-	amount = math.floor(amount + 0.5)
-	if amount < 1000 then
-		return "$" .. tostring(amount)
-	elseif amount < 1000000 then
-		return string.format("$%.1fK", amount / 1000)
-	elseif amount < 1000000000 then
-		return string.format("$%.1fM", amount / 1000000)
-	else
-		return string.format("$%.1fB", amount / 1000000000)
+	local n = math.floor(amount + 0.5)
+	local negative = n < 0
+	n = math.abs(n)
+	local tier = 1
+	while n >= 1000 and tier < #SUFFIXES do
+		n = n / 1000
+		tier += 1
 	end
+	local text
+	if tier == 1 then
+		text = tostring(n)
+	elseif n >= 100 then
+		text = tostring(math.floor(n))
+	elseif n >= 10 then
+		text = string.format("%.1f", n)
+	else
+		text = string.format("%.2f", n)
+	end
+	if negative then
+		return "-$" .. text .. SUFFIXES[tier]
+	end
+	return "$" .. text .. SUFFIXES[tier]
 end
 
-function Util.formatRate(rate)
-	return Util.formatMoney(rate) .. "/dtk"
+function Util.formatClock(seconds)
+	seconds = math.max(0, math.floor(seconds))
+	local mins = math.floor(seconds / 60)
+	local secs = seconds % 60
+	return string.format("%d:%02d", mins, secs)
 end
 
-function Util.clamp(value, low, high)
+function Util.clampNumber(value, low, high)
 	if value < low then
 		return low
 	elseif value > high then

@@ -1,56 +1,47 @@
--- Brainrot Bazaar: shared tuning. One place for every number the game balances on.
+-- Brainrot Bazaar: tuning knobs for the whole game.
+-- One place for every number the designers tweak, so the server and
+-- the client always agree on timings, prices and rewards.
 
 local Config = {}
 
--- Money
-Config.START_MONEY = 100
-Config.REBIRTH_BASE_COST = 10000
-Config.REBIRTH_MULTIPLIER_STEP = 0.25
+-- Starting money for a fresh player.
+Config.StartCash = 100
 
--- Conveyor (the brainrot lane on the north side, z = -45, running west to east)
-Config.CONVEYOR_SPAWN_INTERVAL = 7 -- seconds between spawns
-Config.CONVEYOR_SPEED = 3 -- studs per second
-Config.CONVEYOR_MAX = 8 -- brainrots on the belt at once
-Config.CONVEYOR_LIFETIME = 75 -- seconds before an unbought brainrot walks off
-Config.CONVEYOR_START_X = -42
-Config.CONVEYOR_END_X = 42
-Config.CONVEYOR_Z = -45
-Config.CONVEYOR_Y = 1 -- belt top
+-- How often a new brainrot rolls onto the conveyor (seconds).
+Config.SpawnInterval = 7
 
--- Bases (six plots ringing the plaza; the server builds them at runtime)
-Config.BASE_COUNT = 6
-Config.BASE_SLOT_COUNT = 8
-Config.BASE_POSITIONS = {
-	Vector3.new(50, 0, 0),
-	Vector3.new(35, 0, 35),
-	Vector3.new(0, 0, 50),
-	Vector3.new(-35, 0, 35),
-	Vector3.new(-50, 0, 0),
-	Vector3.new(-35, 0, -35),
+-- Conveyor lane: brainrots enter at x = -45 and ride to x = +45.
+Config.BeltZ = -45
+Config.BeltEnterX = -45
+Config.BeltExitX = 45
+Config.BeltRideSeconds = 14
+
+-- Player bases: six plots around the plaza edges.
+Config.BaseSpots = {
+	Vector3.new(-48, 0, -20),
+	Vector3.new(-48, 0, 0),
+	Vector3.new(-48, 0, 20),
+	Vector3.new(48, 0, -20),
+	Vector3.new(48, 0, 0),
+	Vector3.new(48, 0, 20),
 }
-Config.BASE_COLORS = {
-	Color3.fromRGB(220, 60, 60),
-	Color3.fromRGB(60, 120, 220),
-	Color3.fromRGB(60, 200, 90),
-	Color3.fromRGB(240, 200, 40),
-	Color3.fromRGB(170, 80, 220),
-	Color3.fromRGB(240, 130, 40),
-}
+Config.BaseSize = 16
+Config.MaxBaseSlots = 8
 
--- Base lock (the steal defence)
-Config.LOCK_DURATION = 60 -- seconds a lock holds
-Config.LOCK_COOLDOWN = 150 -- seconds before the owner can lock again
+-- Base lock: a locked base cannot be stolen from.
+Config.LockDuration = 60
+Config.LockCooldown = 120
 
--- Movement
-Config.NORMAL_SPEED = 16
-Config.CARRY_SPEED = 10 -- slowed while hauling a stolen brainrot
+-- Tsunami Es Teh sweeps the map on this timer.
+Config.TsunamiInterval = 180
+Config.TsunamiWarningSeconds = 10
+Config.TsunamiCashLoss = 0.10
 
--- Tsunami Es Teh (the hazard wave)
-Config.WAVE_INTERVAL = 180 -- seconds between waves
-Config.WAVE_WARNING = 15 -- seconds of warning before the wall sweeps
-Config.WAVE_SWEEP_TIME = 12 -- seconds for the wall to cross the map
+-- Si Pencuri Lele, the NPC thief, visits on this timer.
+Config.ThiefInterval = 75
 
--- Si Pencuri Lele (the NPC thief)
-Config.THIEF_INTERVAL = 90 -- seconds between thief visits
+-- Rebirth: each rebirth adds +25% income and costs more than the last.
+Config.RebirthBaseCost = 50000
+Config.RebirthBonus = 0.25
 
 return Config
