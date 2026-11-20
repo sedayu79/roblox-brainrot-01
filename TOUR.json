@@ -1,1 +1,31 @@
-{"steps":[{"screenshot":"1-start.png"},{"call":{"arg":"5000","fn":"tourGrantAll","module":"ServerScriptService.Server.GameState","on":"Server"},"keys":["W"],"screenshot":"2-play.png","wait_ms":2000},{"call":{"arg":"0","fn":"startWaveNow","module":"ServerScriptService.Server.Threat","on":"Server"},"screenshot":"3-end.png","wait_ms":1000}],"tour":1}
+{
+  "steps": [
+    {
+      "screenshot": "1-start.png"
+    },
+    {
+      "call": {
+        "arg": "5000",
+        "fn": "tourGrantAll",
+        "module": "ServerScriptService.Server.GameState",
+        "on": "Server"
+      },
+      "keys": [
+        "W"
+      ],
+      "screenshot": "2-play.png",
+      "wait_ms": 2000
+    },
+    {
+      "call": {
+        "arg": "0",
+        "fn": "startWaveNow",
+        "module": "ServerScriptService.Server.Threat",
+        "on": "Server"
+      },
+      "screenshot": "3-end.png",
+      "wait_ms": 1000
+    }
+  ],
+  "tour": 1
+}
